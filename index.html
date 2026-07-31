@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Grade Cinematic Story Experience</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { 
+            width: 100%; height: 100%; overflow: hidden; 
+            background-color: #020104; 
+            display: flex; justify-content: center; align-items: center; 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+        }
+        canvas { position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        /* Glassmorphic Start Screen Overlay */
+        #startOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 1, 5, 0.94); z-index: 9999;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .start-btn {
+            background: linear-gradient(135deg, #ff0055, #ff5588); color: white; border: none; padding: 20px 50px;
+            border-radius: 50px; font-size: 20px; font-weight: 700; letter-spacing: 1px;
+            box-shadow: 0 0 35px rgba(255, 0, 85, 0.7), 0 0 15px rgba(255, 255, 255, 0.3); 
+            cursor: pointer; transition: transform 0.3s ease;
+            animation: pulseGlow 2s infinite alternate;
+        }
+        @keyframes pulseGlow {
+            0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 0, 85, 0.5); }
+            100% { transform: scale(1.05); box-shadow: 0 0 45px rgba(255, 0, 85, 0.9); }
+        }
+
+        /* Surprise Modal Pop-up */
+        #surpriseModal {
+            position: absolute; z-index: 15; background: rgba(20, 6, 15, 0.88);
+            border: 1.5px solid rgba(255, 0, 85, 0.6); padding: 25px 38px; border-radius: 24px;
+            text-align: center; opacity: 0; transform: scale(0.8) translateY(20px); pointer-events: none;
+            transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); bottom: 45px;
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 0 35px rgba(255, 0, 85, 0.5);
+        }
+        #surpriseModal.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
+        .surprise-btn { 
+            background: linear-gradient(135deg, #ff0055, #ff5588); border: none; color: white; 
+            padding: 14px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; 
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.7); font-size: 15px; transition: transform 0.2s ease;
+        }
+
+        /* Final Question Card */
+        #questionModal {
+            position: absolute; z-index: 20; background: rgba(15, 3, 11, 0.94);
+            border: 1.5px solid #ff0055; padding: 40px; border-radius: 28px; text-align: center;
+            opacity: 0; transform: scale(0.5); pointer-events: none; transition: all 1s ease;
+            max-width: 90%; width: 480px; backdrop-filter: blur(20px);
+            box-shadow: 0 0 50px rgba(255, 0, 85, 0.8);
+        }
+        #questionModal.show { opacity: 1; transform: scale(1); pointer-events: auto; }
+        .question-heading { color: #fff; font-size: 28px; font-weight: 800; margin-bottom: 12px; text-shadow: 0 0 15px #ff0055; }
+        .question-subtext { color: #ff99c8; font-size: 16px; margin-bottom: 18px; }
+        .birthday-wish { color: #ff3377; font-size: 18px; font-weight: bold; border-top: 1px dashed rgba(255,0,85,0.4); padding-top: 12px; }
+    </style>
+</head>
+<body>
+
+    <div id="startOverlay" onclick="this.style.display='none'; startEngine();">
+        <button class="start-btn">Click Anywhere to Start Story ❤️</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="surpriseModal">
+        <div style="color:#fff; font-size: 18px; font-weight:bold; margin-bottom:14px; text-shadow: 0 0 10px #ff0055;">🎁 You Are My Everyday Happiness! ❤️</div>
+        <button class="surprise-btn" id="showPhotoBtn">REWIND 2+ YEAR JOURNEY 📸</button>
+    </div>
+
+    <div id="questionModal">
+        <div class="question-heading">Whats up? ❤️</div>
+        <div class="question-subtext">Let me know...</div>
+        <div class="birthday-wish">And again, wishing you a very happy birthday! 🎂🎉✨</div>
+    </div>
+
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-piano-112627.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const bgMusic = document.getElementById('bgMusic');
+        const surpriseModal = document.getElementById('surpriseModal');
+        const showPhotoBtn = document.getElementById('showPhotoBtn');
+        const questionModal = document.getElementById('questionModal');
+
+        let appState = 'INIT'; 
+        let currentStoryScene = 0;
+        let storyTimer = 0;
+        let walkStep = 0;
+        let piggyX = -60;
+        let trees = [], stars = [], fireflies = [];
+        let dpr = 1;
+        let logicalWidth = window.innerWidth;
+        let logicalHeight = window.innerHeight;
+
+        // High-DPI Scaling Function
+        function resize() {
+            dpr = window.devicePixelRatio || 1;
+            logicalWidth = window.innerWidth;
+            logicalHeight = window.innerHeight;
+            canvas.width = logicalWidth * dpr;
+            canvas.height = logicalHeight * dpr;
+            canvas.style.width = logicalWidth + 'px';
+            canvas.style.height = logicalHeight + 'px';
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Environment Setup
+        for (let i = 0; i < 80; i++) {
+            stars.push({
+                x: Math.random() * logicalWidth,
+                y: Math.random() * logicalHeight * 0.6,
+                size: Math.random() * 1.8 + 0.5,
+                alpha: Math.random()
+            });
+        }
+        for (let i = 0; i < 26; i++) {
+            fireflies.push({
+                x: Math.random() * logicalWidth,
+                y: Math.random() * logicalHeight * 0.75,
+                size: Math.random() * 2.5 + 1,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
+                alpha: Math.random()
+            });
+        }
+        for (let i = 0; i < 22; i++) {
+            trees.push({
+                x: Math.random() * logicalWidth,
+                y: logicalHeight * 0.52,
+                scale: Math.random() * 0.5 + 0.5,
+                speed: Math.random() * 1.0 + 0.6
+            });
+        }
+
+        window.startEngine = function() {
+            try {
+                bgMusic.currentTime = 0;
+                bgMusic.play().catch(e => {});
+            } catch (e) {}
+
+            appState = 'PIGGY_STORY';
+            piggyX = -60;
+            currentStoryScene = 0;
+            storyTimer = 0;
+            playStoryScene(0);
+        };
+
+        const sceneDurations = [4.2, 3.8, 3.8]; 
+
+        function playStoryScene(sceneIndex) {
+            currentStoryScene = sceneIndex;
+            storyTimer = 0;
+            if (sceneIndex >= sceneDurations.length) {
+                appState = 'MATRIX_HEART';
+                isStarted = true;
+            }
+        }
+
+        // --- REALISTIC ATMOSPHERE & LIGHTING ---
+        function drawForest(dt) {
+            let bgGradient = ctx.createLinearGradient(0, 0, 0, logicalHeight);
+            bgGradient.addColorStop(0, '#020612');
+            bgGradient.addColorStop(0.5, '#0a1428');
+            bgGradient.addColorStop(1, '#0c2018');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+
+            // Volumetric Rays
+            ctx.save();
+            let moonX = logicalWidth * 0.82;
+            let moonY = 80;
+            let moonGlow = ctx.createRadialGradient(moonX, moonY, 10, moonX, moonY, logicalHeight * 0.85);
+            moonGlow.addColorStop(0, 'rgba(215, 235, 255, 0.22)');
+            moonGlow.addColorStop(0.4, 'rgba(180, 210, 255, 0.06)');
+            moonGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = moonGlow;
+            ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+
+            ctx.fillStyle = 'rgba(200, 230, 255, 0.03)';
+            ctx.beginPath();
+            ctx.moveTo(moonX - 20, moonY);
+            ctx.lineTo(moonX - 220, logicalHeight);
+            ctx.lineTo(moonX - 120, logicalHeight);
+            ctx.lineTo(moonX + 20, moonY);
+            ctx.fill();
+            ctx.restore();
+
+            stars.forEach(s => {
+                ctx.globalAlpha = Math.abs(Math.sin(Date.now() * 0.0015 + s.alpha));
+                ctx.fillStyle = '#eaf4ff';
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+            });
+            ctx.globalAlpha = 1;
+
+            let groundGrad = ctx.createLinearGradient(0, logicalHeight * 0.65, 0, logicalHeight);
+            groundGrad.addColorStop(0, '#091c11');
+            groundGrad.addColorStop(1, '#030c06');
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(0, logicalHeight * 0.65, logicalWidth, logicalHeight * 0.35);
+
+            trees.forEach(tree => {
+                ctx.save();
+                ctx.translate(tree.x, tree.y);
+                ctx.scale(tree.scale, tree.scale);
+
+                let trunkGrad = ctx.createLinearGradient(-15, 0, 15, 0);
+                trunkGrad.addColorStop(0, '#100804');
+                trunkGrad.addColorStop(1, '#24130a');
+                ctx.fillStyle = trunkGrad;
+                ctx.fillRect(-15, 0, 30, 130);
+
+                ctx.fillStyle = '#0a2213';
+                ctx.beginPath();
+                ctx.arc(0, -25, 65, 0, Math.PI * 2);
+                ctx.arc(-38, 8, 48, 0, Math.PI * 2);
+                ctx.arc(38, 8, 48, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(180, 220, 255, 0.07)';
+                ctx.beginPath();
+                ctx.arc(0, -27, 63, Math.PI * 1.1, Math.PI * 1.9);
+                ctx.fill();
+
+                ctx.restore();
+
+                if (currentStoryScene === 0) {
+                    tree.x -= tree.speed * dt * 60;
+                    if (tree.x < -120) tree.x = logicalWidth + 120;
+                }
+            });
+
+            fireflies.forEach(f => {
+                f.x += f.vx * dt * 60;
+                f.y += f.vy * dt * 60;
+                if (f.x < 0 || f.x > logicalWidth) f.vx *= -1;
+                if (f.y < 0 || f.y > logicalHeight * 0.75) f.vy *= -1;
+
+                let glowAlpha = Math.abs(Math.sin(Date.now() * 0.003 + f.alpha));
+                ctx.save();
+                ctx.shadowColor = '#ffff77';
+                ctx.shadowBlur = 8;
+                ctx.fillStyle = `rgba(240, 255, 120, ${glowAlpha})`;
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        function drawLeg(lx, ly, angle) {
+            ctx.save();
+            ctx.translate(lx, ly);
+            ctx.rotate(angle);
+            let legGrad = ctx.createLinearGradient(0, 0, 0, 20);
+            legGrad.addColorStop(0, '#f2a0b1');
+            legGrad.addColorStop(1, '#d87289');
+            ctx.fillStyle = legGrad;
+            ctx.fillRect(-5, 0, 10, 20);
+            ctx.restore();
+        }
+
+        function drawPiggy(x, y, isJumping = false, dt = 0.016) {
+            walkStep += 0.14 * dt * 60;
+            let bounce = isJumping ? Math.abs(Math.sin(walkStep * 1.5)) * 26 : Math.abs(Math.sin(walkStep)) * 7;
+            let legAngle = isJumping ? 0.22 : Math.sin(walkStep) * 0.28;
+
+            ctx.save();
+            ctx.translate(x, y - bounce);
+
+            ctx.fillStyle = 'rgba(2, 8, 5, 0.45)';
+            ctx.beginPath();
+            ctx.ellipse(0, 46 + bounce * 0.8, 42, 11, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            drawLeg(-18, 24, -legAngle);
+            drawLeg(18, 24, legAngle);
+
+            let bodyGrad = ctx.createRadialGradient(-10, -10, 5, 0, 0, 48);
+            bodyGrad.addColorStop(0, '#ffd3dd');
+            bodyGrad.addColorStop(0.6, '#f4a0b3');
+            bodyGrad.addColorStop(1, '#c9647b');
+            ctx.fillStyle = bodyGrad;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 46, 36, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            drawLeg(-10, 27, legAngle);
+            drawLeg(26, 27, -legAngle);
+
+            let headGrad = ctx.createRadialGradient(24, -18, 4, 30, -12, 26);
+            headGrad.addColorStop(0, '#ffe0e8');
+            headGrad.addColorStop(0.7, '#f4a3b5');
+            headGrad.addColorStop(1, '#cd6a81');
+            ctx.fillStyle = headGrad;
+            ctx.beginPath();
+            ctx.arc(30, -12, 25, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#e28096';
+            ctx.beginPath();
+            ctx.moveTo(22, -32);
+            ctx.lineTo(14, -46);
+            ctx.lineTo(31, -38);
+            ctx.fill();
+
+            ctx.fillStyle = '#1c1517';
+            ctx.beginPath();
+            ctx.arc(39, -16, 3.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(40.5, -17.5, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            let snoutGrad = ctx.createLinearGradient(42, -16, 54, -6);
+            snoutGrad.addColorStop(0, '#f98ba3');
+            snoutGrad.addColorStop(1, '#d85874');
+            ctx.fillStyle = snoutGrad;
+            ctx.beginPath();
+            ctx.ellipse(49, -10, 9, 6.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#8e2741';
+            ctx.beginPath();
+            ctx.arc(47.5, -10, 1.5, 0, Math.PI * 2);
+            ctx.arc(51.5, -10, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#e5859a';
+            ctx.lineWidth = 3.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.arc(-49, -5, 8, 0, Math.PI * 1.5);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawCake(x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            let flameFlicker = Math.sin(Date.now() * 0.012) * 1.5;
+
+            let candleGlow = ctx.createRadialGradient(0, -32, 2, 0, 0, 130 + flameFlicker * 6);
+            candleGlow.addColorStop(0, 'rgba(255, 165, 50, 0.38)');
+            candleGlow.addColorStop(0.5, 'rgba(255, 90, 20, 0.14)');
+            candleGlow.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = candleGlow;
+            ctx.beginPath();
+            ctx.ellipse(0, 10, 120 + flameFlicker * 5, 45, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#e8ecef';
+            ctx.beginPath();
+            ctx.ellipse(0, 20, 42, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            let cakeGrad = ctx.createLinearGradient(-30, -10, 30, 20);
+            cakeGrad.addColorStop(0, '#ff66aa');
+            cakeGrad.addColorStop(1, '#c83b7a');
+            ctx.fillStyle = cakeGrad;
+            ctx.fillRect(-30, -10, 60, 30);
+
+            ctx.fillStyle = '#fff5f8';
+            ctx.beginPath();
+            ctx.ellipse(0, -10, 30, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffcc00';
+            ctx.fillRect(-3, -28, 6, 18);
+
+            ctx.fillStyle = '#ff3300';
+            ctx.beginPath();
+            ctx.arc(0, -32, 4.5 + flameFlicker * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffaa';
+            ctx.beginPath();
+            ctx.arc(0, -32, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // --- KEN BURNS SLIDESHOW ---
+        const imageSources = ['pic2.jpeg','pic3.jpeg','pic4.jpeg','pic5.jpeg','pic6.jpeg','pic7.jpeg','pic8.jpeg','pic9.jpeg','pic10.jpeg','pic11.jpeg','pic12.jpeg','pic13.jpeg']; 
+        let loadedImages = [];
+        let currentImgIndex = 0;
+        let isRevealingImage = false;
+        let imgAlpha = 0;
+        let imgScale = 0.92;
+        let driftX = 0, driftY = 0;
+        let imgState = 'FADE_IN'; 
+        let imgHoldTimer = 0;
+
+        function createDummyImage(index) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 700;
+            tempCanvas.height = 480;
+            const tCtx = tempCanvas.getContext('2d');
+            
+            let grad = tCtx.createLinearGradient(0, 0, 700, 480);
+            grad.addColorStop(0, '#ff0055'); grad.addColorStop(1, '#ff5588');
+            tCtx.fillStyle = grad;
+            tCtx.fillRect(0, 0, 700, 480);
+
+            tCtx.fillStyle = '#ffffff';
+            tCtx.font = 'bold 36px "Segoe UI", sans-serif';
+            tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
+            tCtx.fillText(`Beautiful Memory #${index + 1} ❤️`, 350, 240);
+            
+            const dummy = new Image();
+            dummy.src = tempCanvas.toDataURL();
+            return dummy;
+        }
+
+        function preloadImages(callback) {
+            let loadedCount = 0; 
+            loadedImages = [];
+            imageSources.forEach((src, idx) => {
+                const img = new Image();
+                img.onload = () => { loadedImages[idx] = img; loadedCount++; if (loadedCount === imageSources.length) callback(); };
+                img.onerror = () => { loadedImages[idx] = createDummyImage(idx); loadedCount++; if (loadedCount === imageSources.length) callback(); };
+                img.src = src;
+            });
+        }
+
+        showPhotoBtn.addEventListener('click', function() {
+            preloadImages(() => {
+                currentImgIndex = 0; 
+                imgAlpha = 0;
+                imgScale = 0.92;
+                driftX = 0; driftY = 0;
+                imgState = 'FADE_IN';
+                imgHoldTimer = 0;
+                isRevealingImage = true; 
+            });
+            surpriseModal.style.opacity = '0'; 
+            surpriseModal.style.pointerEvents = 'none';
+        });
+
+        function drawSinglePhoto(dt) {
+            if (!isRevealingImage || loadedImages.length === 0) return;
+            const activeImg = loadedImages[currentImgIndex];
+            if (!activeImg) return;
+
+            if (imgState === 'FADE_IN') {
+                imgAlpha += 1.5 * dt;
+                imgScale += 0.02 * dt;
+                driftX += 4.0 * dt;
+                driftY -= 2.0 * dt;
+                if (imgAlpha >= 1) { imgAlpha = 1; imgState = 'HOLD'; imgHoldTimer = 0; }
+            } else if (imgState === 'HOLD') {
+                imgHoldTimer += dt;
+                imgScale += 0.012 * dt;
+                driftX += 3.0 * dt;
+                driftY -= 1.5 * dt;
+                if (imgHoldTimer > 2.0) { imgState = 'FADE_OUT'; }
+            } else if (imgState === 'FADE_OUT') {
+                imgAlpha -= 1.8 * dt;
+                imgScale += 0.02 * dt;
+                driftX += 2.0 * dt;
+                if (imgAlpha <= 0) {
+                    imgAlpha = 0;
+                    imgScale = 0.92;
+                    driftX = 0; driftY = 0;
+                    currentImgIndex++;
+                    if (currentImgIndex >= loadedImages.length) {
+                        isRevealingImage = false;
+                        setTimeout(() => { questionModal.classList.add('show'); }, 600);
+                        return;
+                    } else {
+                        imgState = 'FADE_IN';
+                    }
+                }
+            }
+
+            const maxW = logicalWidth * 0.72;
+            const maxH = logicalHeight * 0.72;
+            let w = activeImg.width || 600;
+            let h = activeImg.height || 400;
+
+            let ratio = Math.min(maxW / w, maxH / h);
+            w = w * ratio * imgScale;
+            h = h * ratio * imgScale;
+
+            const x = (logicalWidth - w) / 2 + driftX;
+            const y = (logicalHeight - h) / 2 + driftY;
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, imgAlpha);
+            
+            ctx.shadowColor = 'rgba(255, 0, 85, 0.6)';
+            ctx.shadowBlur = 30;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x - 12, y - 12, w + 24, h + 38);
+            ctx.shadowBlur = 0;
+            
+            ctx.drawImage(activeImg, x, y, w, h);
+            ctx.restore();
+        }
+
+        // --- DYNAMIC SWARM MINI-HEARTS ASSEMBLY ENGINE ---
+        let isStarted = false, miniHearts = [], heartAssemblyParticles = [];
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789♥ღ💕ILOVEYOU';
+        const fontSize = 14;
+        let columns = Math.floor(logicalWidth / fontSize);
+        let drops = Array(columns).fill(1);
+        let step = 0, timer = 0, textParticles = [], heartProgress = 0, surpriseTriggered = false;
+
+        const sequence = [
+            { type: 'text', text: '3', duration: 1.3 }, { type: 'text', text: '2', duration: 1.3 }, { type: 'text', text: '1', duration: 1.3 },
+            { type: 'text', text: 'You', duration: 1.5 }, { type: 'text', text: 'Are', duration: 1.5 }, { type: 'text', text: 'My', duration: 1.5 },
+            { type: 'text', text: 'Unlimited Sukoon', duration: 1.8 }, { type: 'heart', text: 'Love You ❤️ oic oic', duration: 4.0 }
+        ];
+
+        class SwarmHeartParticle {
+            constructor(targetX, targetY) {
+                this.targetX = targetX;
+                this.targetY = targetY;
+
+                let angle = Math.random() * Math.PI * 2;
+                let dist = Math.random() * Math.max(logicalWidth, logicalHeight) * 0.6 + 100;
+                this.x = targetX + Math.cos(angle) * dist;
+                this.y = targetY + Math.sin(angle) * dist;
+
+                this.size = Math.random() * 0.28 + 0.16;
+                this.alpha = 0;
+                this.maxAlpha = Math.random() * 0.85 + 0.15;
+                this.speed = Math.random() * 0.04 + 0.03; 
+                this.color = `hsl(${Math.random() * 30 + 335}, 100%, 65%)`;
+                this.assembled = false;
+            }
+
+            update(dt) {
+                if (this.alpha < this.maxAlpha) this.alpha += 2.0 * dt;
+
+                let dx = this.targetX - this.x;
+                let dy = this.targetY - this.y;
+
+                this.x += dx * this.speed * dt * 60;
+                this.y += dy * this.speed * dt * 60;
+
+                if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
+                    this.assembled = true;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                let pulseScale = this.assembled ? (1 + Math.sin(Date.now() * 0.005 + this.targetX) * 0.12) : 1;
+                ctx.translate(this.x, this.y);
+                ctx.scale(this.size * pulseScale, this.size * pulseScale);
+                ctx.globalAlpha = Math.max(0, this.alpha);
+
+                ctx.shadowColor = 'rgba(255, 0, 85, 0.7)';
+                ctx.shadowBlur = 8;
+                ctx.fillStyle = this.color;
+
+                ctx.beginPath();
+                ctx.moveTo(0, 8/3);
+                ctx.bezierCurveTo(-8, -4, -9.6, 4, 0, 9.6);
+                ctx.bezierCurveTo(9.6, 4, 8, -4, 0, 8/3);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class MiniHeart {
+            constructor(cx, cy) {
+                this.x = cx + (Math.random() - 0.5) * 10;
+                this.y = cy + (Math.random() - 0.5) * 10;
+                this.scale = 0;
+                this.maxScale = Math.random() * 0.32 + 0.16;
+                this.alpha = 0;
+                this.maxAlpha = Math.random() * 0.85 + 0.15;
+
+                let angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.3;
+                let speed = Math.random() * 1.3 + 0.5;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.rotation = (Math.random() - 0.5) * 0.4;
+                this.rotSpeed = (Math.random() - 0.5) * 0.02;
+                this.color = `hsl(${Math.random() * 25 + 335}, 95%, 65%)`;
+            }
+
+            update(dt) {
+                if (this.alpha < this.maxAlpha) this.alpha += 2.5 * dt;
+                if (this.scale < this.maxScale) this.scale += 2.0 * dt;
+
+                this.x += this.vx * dt * 60;
+                this.y += this.vy * dt * 60;
+                this.rotation += this.rotSpeed * dt * 60;
+                this.vx += Math.sin(Date.now() * 0.004 + this.y) * 0.015 * dt * 60;
+                this.alpha -= 0.5 * dt;
+            }
+
+            draw() {
+                if (this.alpha <= 0) return;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.scale(Math.max(0, this.scale), Math.max(0, this.scale));
+                ctx.globalAlpha = Math.max(0, this.alpha);
+
+                ctx.shadowColor = 'rgba(255, 51, 119, 0.4)';
+                ctx.shadowBlur = 6;
+                ctx.fillStyle = this.color;
+
+                ctx.beginPath();
+                ctx.moveTo(0, 8/3);
+                ctx.bezierCurveTo(-8, -4, -9.6, 4, 0, 9.6);
+                ctx.bezierCurveTo(9.6, 4, 8, -4, 0, 8/3);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function initSwarmHeartAssembly(cx, cy, sc) {
+            heartAssemblyParticles = [];
+            for (let t = 0; t <= Math.PI * 2; t += 0.035) {
+                let tx = cx + (16 * Math.pow(Math.sin(t), 3)) * sc;
+                let ty = cy + (-(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))) * sc;
+                heartAssemblyParticles.push(new SwarmHeartParticle(tx, ty));
+            }
+        }
+
+        function createTextParticles(text) {
+            const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = logicalWidth; tempCanvas.height = logicalHeight;
+            tempCtx.font = 'bold 90px "Segoe UI", sans-serif'; tempCtx.fillStyle = 'white'; tempCtx.textAlign = 'center'; tempCtx.textBaseline = 'middle';
+            tempCtx.fillText(text, logicalWidth / 2, logicalHeight / 2);
+            const imgData = tempCtx.getImageData(0, 0, logicalWidth, logicalHeight), particles = [];
+            for (let y = 0; y < logicalHeight; y += 6) {
+                for (let x = 0; x < logicalWidth; x += 6) {
+                    if (imgData.data[(y * logicalWidth + x) * 4 + 3] > 128) particles.push({ x, y });
+                }
+            }
+            return particles;
+        }
+
+        function drawMatrixRain(dt) {
+            ctx.fillStyle = isRevealingImage ? 'rgba(3, 0, 5, 0.25)' : 'rgba(3, 0, 5, 0.15)'; 
+            ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+            ctx.fillStyle = '#ff2a75'; ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > logicalHeight && Math.random() > 0.975) drops[i] = 0;
+                drops[i] += 1 * dt * 60;
+            }
+        }
+
+        let lastTime = performance.now();
+
+        function animate(now) {
+            let dt = (now - lastTime) / 1000;
+            if (dt > 0.1) dt = 0.1;
+            lastTime = now;
+
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+
+            if (appState === 'PIGGY_STORY') {
+                ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+                drawForest(dt);
+                const groundY = logicalHeight * 0.72;
+                if (currentStoryScene === 0) { if (piggyX < logicalWidth * 0.4) piggyX += 120 * dt; drawPiggy(piggyX, groundY, false, dt); }
+                else if (currentStoryScene === 1) { drawCake(logicalWidth * 0.6, groundY + 10); drawPiggy(logicalWidth * 0.38, groundY, false, dt); }
+                else if (currentStoryScene === 2) { drawCake(logicalWidth * 0.6, groundY + 10); drawPiggy(logicalWidth * 0.38, groundY, true, dt); }
+
+                storyTimer += dt;
+                if (storyTimer > sceneDurations[currentStoryScene]) playStoryScene(currentStoryScene + 1);
+            } 
+            else if (appState === 'MATRIX_HEART') {
+                drawMatrixRain(dt);
+                
+                if (isRevealingImage) {
+                    drawSinglePhoto(dt);
+                } else if (isStarted) {
+                    const cx = logicalWidth / 2, cy = logicalHeight / 2, sc = Math.min(logicalWidth, logicalHeight) / 45, current = sequence[step];
+                    if (current) {
+                        if (current.type === 'text') {
+                            if (timer === 0) textParticles = createTextParticles(current.text);
+                            ctx.fillStyle = '#ffffff';
+                            textParticles.forEach(p => { ctx.fillRect(p.x, p.y, 3.5, 3.5); });
+                            timer += dt;
+                            if (timer > current.duration) { timer = 0; step++; }
+                        } else if (current.type === 'heart') {
+                            
+                            if (heartAssemblyParticles.length === 0) {
+                                initSwarmHeartAssembly(cx, cy, sc);
+                            }
+
+                            heartAssemblyParticles.forEach(p => {
+                                p.update(dt);
+                                p.draw();
+                            });
+
+                            if (Math.random() < 0.45) miniHearts.push(new MiniHeart(cx, cy));
+                            for (let i = miniHearts.length - 1; i >= 0; i--) { 
+                                miniHearts[i].update(dt); 
+                                miniHearts[i].draw(); 
+                                if (miniHearts[i].alpha <= 0) miniHearts.splice(i, 1);
+                            }
+
+                            ctx.fillStyle = '#ffffff'; 
+                            ctx.font = 'bold 22px "Segoe UI", sans-serif'; 
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
+                            ctx.fillText(current.text, cx, cy);
+
+                            timer += dt;
+                            if (timer > 1.4 && !surpriseTriggered) { 
+                                surpriseTriggered = true; 
+                                surpriseModal.style.left = (logicalWidth - surpriseModal.offsetWidth) / 2 + 'px'; 
+                                surpriseModal.classList.add('show'); 
+                            }
+                        }
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
