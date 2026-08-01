@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Studio Grade Cinematic Story Experience</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,13 +21,16 @@
             display: flex; justify-content: center; align-items: center; cursor: pointer;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+            padding: 20px;
         }
         .start-btn {
-            background: linear-gradient(135deg, #ff0055, #ff5588); color: white; border: none; padding: 20px 50px;
-            border-radius: 50px; font-size: 20px; font-weight: 700; letter-spacing: 1px;
+            background: linear-gradient(135deg, #ff0055, #ff5588); color: white; border: none; padding: 18px 36px;
+            border-radius: 50px; font-size: 18px; font-weight: 700; letter-spacing: 0.5px;
             box-shadow: 0 0 35px rgba(255, 0, 85, 0.7), 0 0 15px rgba(255, 255, 255, 0.3); 
             cursor: pointer; transition: transform 0.3s ease;
             animation: pulseGlow 2s infinite alternate;
+            text-align: center;
+            max-width: 90%;
         }
         @keyframes pulseGlow {
             0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 0, 85, 0.5); }
@@ -37,49 +40,59 @@
         /* Surprise Modal Pop-up */
         #surpriseModal {
             position: absolute; z-index: 15; background: rgba(20, 6, 15, 0.88);
-            border: 1.5px solid rgba(255, 0, 85, 0.6); padding: 25px 38px; border-radius: 24px;
+            border: 1.5px solid rgba(255, 0, 85, 0.6); padding: 20px 25px; border-radius: 20px;
             text-align: center; opacity: 0; transform: scale(0.8) translateY(20px); pointer-events: none;
-            transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); bottom: 45px;
+            transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); bottom: 40px;
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             box-shadow: 0 0 35px rgba(255, 0, 85, 0.5);
+            max-width: 92%; width: 400px;
         }
         #surpriseModal.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
         .surprise-btn { 
             background: linear-gradient(135deg, #ff0055, #ff5588); border: none; color: white; 
-            padding: 14px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; 
-            box-shadow: 0 0 20px rgba(255, 0, 85, 0.7); font-size: 15px; transition: transform 0.2s ease;
+            padding: 12px 24px; border-radius: 25px; font-weight: bold; cursor: pointer; 
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.7); font-size: 14px; transition: transform 0.2s ease;
+            width: 100%;
         }
 
         /* Final Question Card */
         #questionModal {
             position: absolute; z-index: 20; background: rgba(15, 3, 11, 0.94);
-            border: 1.5px solid #ff0055; padding: 40px; border-radius: 28px; text-align: center;
+            border: 1.5px solid #ff0055; padding: 30px 24px; border-radius: 24px; text-align: center;
             opacity: 0; transform: scale(0.5); pointer-events: none; transition: all 1s ease;
-            max-width: 90%; width: 480px; backdrop-filter: blur(20px);
+            max-width: 90%; width: 420px; backdrop-filter: blur(20px);
             box-shadow: 0 0 50px rgba(255, 0, 85, 0.8);
         }
         #questionModal.show { opacity: 1; transform: scale(1); pointer-events: auto; }
-        .question-heading { color: #fff; font-size: 28px; font-weight: 800; margin-bottom: 12px; text-shadow: 0 0 15px #ff0055; }
-        .question-subtext { color: #ff99c8; font-size: 16px; margin-bottom: 18px; }
-        .birthday-wish { color: #ff3377; font-size: 18px; font-weight: bold; border-top: 1px dashed rgba(255,0,85,0.4); padding-top: 12px; }
+        .question-heading { color: #fff; font-size: 24px; font-weight: 800; margin-bottom: 10px; text-shadow: 0 0 15px #ff0055; }
+        .question-subtext { color: #ff99c8; font-size: 15px; margin-bottom: 16px; }
+        .birthday-wish { color: #ff3377; font-size: 16px; font-weight: bold; border-top: 1px dashed rgba(255,0,85,0.4); padding-top: 12px; }
+
+        /* Responsive Mobile Styles */
+        @media (max-width: 600px) {
+            .start-btn { font-size: 16px; padding: 16px 28px; }
+            .question-heading { font-size: 22px; }
+            .question-subtext { font-size: 14px; }
+            .birthday-wish { font-size: 15px; }
+        }
     </style>
 </head>
 <body>
 
     <div id="startOverlay" onclick="this.style.display='none'; startEngine();">
-        <button class="start-btn">Click Anywhere to Start Story ❤️</button>
+        <button class="start-btn">Click to start❤️</button>
     </div>
 
     <canvas id="canvas"></canvas>
 
     <div id="surpriseModal">
-        <div style="color:#fff; font-size: 18px; font-weight:bold; margin-bottom:14px; text-shadow: 0 0 10px #ff0055;">🎁 You Are My Everyday Happiness! ❤️</div>
+        <div style="color:#fff; font-size: 16px; font-weight:bold; margin-bottom:12px; text-shadow: 0 0 10px #ff0055;">🎁 You Are My Everyday Happiness! ❤️</div>
         <button class="surprise-btn" id="showPhotoBtn">REWIND 2+ YEAR JOURNEY 📸</button>
     </div>
 
     <div id="questionModal">
-        <div class="question-heading">Whats up? ❤️</div>
-        <div class="question-subtext">Let me know...</div>
+        <div class="question-heading">Whats up?</div>
+        <div class="question-subtext">Let me know ❤️...</div>
         <div class="birthday-wish">And again, wishing you a very happy birthday! 🎂🎉✨</div>
     </div>
 
@@ -105,7 +118,6 @@
         let logicalWidth = window.innerWidth;
         let logicalHeight = window.innerHeight;
 
-        // High-DPI Scaling Function
         function resize() {
             dpr = window.devicePixelRatio || 1;
             logicalWidth = window.innerWidth;
@@ -118,7 +130,6 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Environment Setup
         for (let i = 0; i < 80; i++) {
             stars.push({
                 x: Math.random() * logicalWidth,
@@ -170,7 +181,6 @@
             }
         }
 
-        // --- REALISTIC ATMOSPHERE & LIGHTING ---
         function drawForest(dt) {
             let bgGradient = ctx.createLinearGradient(0, 0, 0, logicalHeight);
             bgGradient.addColorStop(0, '#020612');
@@ -179,7 +189,6 @@
             ctx.fillStyle = bgGradient;
             ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
-            // Volumetric Rays
             ctx.save();
             let moonX = logicalWidth * 0.82;
             let moonY = 80;
@@ -399,7 +408,7 @@
         }
 
         // --- KEN BURNS SLIDESHOW ---
-        const imageSources = ['pic2.jpeg','pic3.jpeg','pic4.jpeg','pic5.jpeg','pic6.jpeg','pic7.jpeg','pic8.jpeg','pic9.jpeg','pic10.jpeg','pic11.jpeg','pic12.jpeg','pic13.jpeg']; 
+        const imageSources = ['pic0.jpeg','pic4.jpeg','pic5.jpeg','pic6.jpeg','pic7.jpeg','pic7.2.jpeg','pic8.jpeg','pic9.jpeg','pic10.jpeg','pic11.jpeg','pic12.jpeg','pic13.jpeg','pic13.2.jpeg','pic14.jpeg','pic15.jpeg','pic16.jpeg','pic17.jpeg','pic18.jpeg','pic19.jpeg','pic2.jpeg','pic3.jpeg']; 
         let loadedImages = [];
         let currentImgIndex = 0;
         let isRevealingImage = false;
@@ -455,6 +464,117 @@
             surpriseModal.style.pointerEvents = 'none';
         });
 
+        // --- EMBEDDED REALISTIC HD ROSE BLOOMING ENGINE WITH DYNAMIC TEXT ---
+        let isRevealingRose = false;
+        let roseBloomProgress = 0;
+        let roseTimer = 0;
+        let rosePetals = [];
+
+        const fullMessageText = "This is for you ❤️";
+
+        // High Resolution Embedded Realistic Rose SVG Data
+        const realRoseImg = new Image();
+        realRoseImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><radialGradient id="r1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="%23ff3366"/><stop offset="60%" stop-color="%23b3003b"/><stop offset="100%" stop-color="%23400014"/></radialGradient><radialGradient id="r2" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="%23ff6688"/><stop offset="70%" stop-color="%23cc0044"/><stop offset="100%" stop-color="%23660022"/></radialGradient><linearGradient id="st" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="%230f3818"/><stop offset="50%" stop-color="%232e8b46"/><stop offset="100%" stop-color="%230a2610"/></linearGradient></defs><path d="M250,260 Q235,380 260,490" stroke="url(%23st)" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M245,340 Q180,310 150,350 Q200,390 245,340" fill="%231e6b30"/><path d="M255,380 Q320,350 350,390 Q300,430 255,380" fill="%23195928"/><g><ellipse cx="250" cy="200" rx="140" ry="120" fill="url(%23r1)"/><path d="M130,180 Q180,290 250,290 Q320,290 370,180 Q250,240 130,180" fill="url(%23r2)"/><path d="M150,150 Q250,110 350,150 Q360,240 250,260 Q140,240 150,150" fill="%23e6004c"/><path d="M180,130 Q250,90 320,130 Q330,200 250,220 Q170,200 180,130" fill="%23ff1a53"/><path d="M200,120 Q250,85 300,120 Q310,180 250,190 Q190,180 200,120" fill="%23ff4d79"/><circle cx="250" cy="140" r="35" fill="%23ff80a0"/><ellipse cx="250" cy="135" rx="20" ry="15" fill="%23ffffff" opacity="0.3"/></g></svg>';
+
+        for(let i=0; i<45; i++){
+            rosePetals.push({
+                x: (Math.random() - 0.5) * 450,
+                y: -Math.random() * 350 - 50,
+                size: Math.random() * 8 + 4,
+                speedY: Math.random() * 1.3 + 0.6,
+                speedX: Math.sin(Math.random() * Math.PI) * 0.9,
+                rot: Math.random() * Math.PI,
+                rotSpeed: (Math.random() - 0.5) * 0.03
+            });
+        }
+
+        function drawCinematicRose(dt) {
+            if (!isRevealingRose) return;
+
+            roseTimer += dt;
+            if (roseBloomProgress < 1) {
+                roseBloomProgress += 0.3 * dt;
+                if (roseBloomProgress > 1) roseBloomProgress = 1;
+            }
+
+            const cx = logicalWidth / 2;
+            const cy = logicalHeight / 2 + 20;
+
+            // Deep Ambient Rose Glow
+            let glowGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 280);
+            glowGrad.addColorStop(0, `rgba(255, 0, 85, ${0.45 * roseBloomProgress})`);
+            glowGrad.addColorStop(0.5, `rgba(180, 0, 50, ${0.18 * roseBloomProgress})`);
+            glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = glowGrad;
+            ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+
+            // Dynamic Typewriter Text Above Rose (Mobile-Adaptive Font Size)
+            let charCount = Math.floor(roseTimer * 7);
+            let currentTypedText = fullMessageText.substring(0, Math.min(fullMessageText.length, charCount));
+
+            if (currentTypedText.length > 0) {
+                ctx.save();
+                ctx.fillStyle = '#ffffff';
+                let fontSize = logicalWidth < 600 ? Math.min(logicalWidth * 0.07, 26) : 34;
+                ctx.font = `bold ${fontSize}px "Segoe UI", sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(255, 0, 85, 0.9)';
+                ctx.shadowBlur = 18;
+                ctx.fillText(currentTypedText, cx, cy - Math.min(logicalHeight * 0.3, 210));
+                ctx.restore();
+            }
+
+            // Rose Unfolding Animation
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            let scaleFactor = 0.25 + 0.75 * (1 - Math.pow(1 - roseBloomProgress, 3));
+            let rotationAngle = (1 - roseBloomProgress) * 0.2;
+
+            ctx.scale(scaleFactor, scaleFactor);
+            ctx.rotate(rotationAngle);
+            ctx.globalAlpha = Math.min(1, roseBloomProgress * 1.5);
+
+            ctx.shadowColor = 'rgba(255, 0, 85, 0.8)';
+            ctx.shadowBlur = 45;
+
+            // Adaptive Mobile Rose Size
+            const roseW = Math.min(logicalWidth * 0.72, 420);
+            const roseH = roseW;
+
+            ctx.drawImage(realRoseImg, -roseW / 2, -roseH / 2, roseW, roseH);
+            ctx.restore();
+
+            // Floating Magic Petals
+            rosePetals.forEach(p => {
+                p.y += p.speedY * dt * 60;
+                p.x += Math.sin(roseTimer + p.y * 0.02) * p.speedX;
+                p.rot += p.rotSpeed;
+
+                if (p.y > logicalHeight / 2 + 200) {
+                    p.y = -logicalHeight / 2 - 50;
+                    p.x = (Math.random() - 0.5) * 450;
+                }
+
+                ctx.save();
+                ctx.translate(cx + p.x, cy + p.y);
+                ctx.rotate(p.rot);
+                ctx.fillStyle = 'rgba(230, 15, 75, 0.85)';
+                ctx.shadowColor = '#ff0055';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // Trigger Final Modal
+            if (roseTimer > 4.0 && !questionModal.classList.contains('show')) {
+                questionModal.classList.add('show');
+            }
+        }
+
         function drawSinglePhoto(dt) {
             if (!isRevealingImage || loadedImages.length === 0) return;
             const activeImg = loadedImages[currentImgIndex];
@@ -483,7 +603,9 @@
                     currentImgIndex++;
                     if (currentImgIndex >= loadedImages.length) {
                         isRevealingImage = false;
-                        setTimeout(() => { questionModal.classList.add('show'); }, 600);
+                        isRevealingRose = true; 
+                        roseTimer = 0;
+                        roseBloomProgress = 0;
                         return;
                     } else {
                         imgState = 'FADE_IN';
@@ -491,8 +613,8 @@
                 }
             }
 
-            const maxW = logicalWidth * 0.72;
-            const maxH = logicalHeight * 0.72;
+            const maxW = logicalWidth * 0.85;
+            const maxH = logicalHeight * 0.7;
             let w = activeImg.width || 600;
             let h = activeImg.height || 400;
 
@@ -509,7 +631,7 @@
             ctx.shadowColor = 'rgba(255, 0, 85, 0.6)';
             ctx.shadowBlur = 30;
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(x - 12, y - 12, w + 24, h + 38);
+            ctx.fillRect(x - 10, y - 10, w + 20, h + 32);
             ctx.shadowBlur = 0;
             
             ctx.drawImage(activeImg, x, y, w, h);
@@ -644,7 +766,8 @@
         function createTextParticles(text) {
             const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
             tempCanvas.width = logicalWidth; tempCanvas.height = logicalHeight;
-            tempCtx.font = 'bold 90px "Segoe UI", sans-serif'; tempCtx.fillStyle = 'white'; tempCtx.textAlign = 'center'; tempCtx.textBaseline = 'middle';
+            let textSize = logicalWidth < 600 ? Math.min(logicalWidth * 0.12, 60) : 90;
+            tempCtx.font = `bold ${textSize}px "Segoe UI", sans-serif`; tempCtx.fillStyle = 'white'; tempCtx.textAlign = 'center'; tempCtx.textBaseline = 'middle';
             tempCtx.fillText(text, logicalWidth / 2, logicalHeight / 2);
             const imgData = tempCtx.getImageData(0, 0, logicalWidth, logicalHeight), particles = [];
             for (let y = 0; y < logicalHeight; y += 6) {
@@ -656,7 +779,7 @@
         }
 
         function drawMatrixRain(dt) {
-            ctx.fillStyle = isRevealingImage ? 'rgba(3, 0, 5, 0.25)' : 'rgba(3, 0, 5, 0.15)'; 
+            ctx.fillStyle = (isRevealingImage || isRevealingRose) ? 'rgba(3, 0, 5, 0.25)' : 'rgba(3, 0, 5, 0.15)'; 
             ctx.fillRect(0, 0, logicalWidth, logicalHeight);
             ctx.fillStyle = '#ff2a75'; ctx.font = fontSize + 'px monospace';
             for (let i = 0; i < drops.length; i++) {
@@ -692,6 +815,8 @@
                 
                 if (isRevealingImage) {
                     drawSinglePhoto(dt);
+                } else if (isRevealingRose) {
+                    drawCinematicRose(dt);
                 } else if (isStarted) {
                     const cx = logicalWidth / 2, cy = logicalHeight / 2, sc = Math.min(logicalWidth, logicalHeight) / 45, current = sequence[step];
                     if (current) {
@@ -720,7 +845,8 @@
                             }
 
                             ctx.fillStyle = '#ffffff'; 
-                            ctx.font = 'bold 22px "Segoe UI", sans-serif'; 
+                            let heartTextSize = logicalWidth < 600 ? 18 : 22;
+                            ctx.font = `bold ${heartTextSize}px "Segoe UI", sans-serif`; 
                             ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
                             ctx.fillText(current.text, cx, cy);
 
@@ -734,7 +860,6 @@
                     }
                 }
             }
-            
             requestAnimationFrame(animate);
         }
         requestAnimationFrame(animate);
